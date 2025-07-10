@@ -4,6 +4,10 @@ import pandas as pd
 from typing import Dict, Literal
 import matplotlib.pyplot as plt
 import seaborn as sns
+from word_tokenizer import WordTokenizer
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class FineFoodReview:
@@ -20,7 +24,13 @@ class FineFoodReview:
 
         self._set_values()
 
-    def _set_values(self):
+        self.tokenizer = WordTokenizer(
+            remove_stopwords=True,
+            lower_case=True,
+            use_lemmatization=True,
+        )
+
+    def _set_values(self) -> None:
         self.num_users = self.dataset["UserId"].nunique()
         self.num_products = self.dataset["ProductId"].nunique()
         self.num_reviews = self.dataset.shape[0]
@@ -36,3 +46,23 @@ class FineFoodReview:
             "user": self.grouped_by_user.describe().to_dict(),
             "product": self.grouped_by_product.describe().to_dict(),
         }
+
+    def tokenize_reviews(self) -> list[str]:
+        """
+        Tokenizes the reviews in the dataset using the WordTokenizer.
+        Adds a new column 'TokenizedText' to the dataset containing the tokenized reviews.
+        This method processes each review in the 'Text' column of the dataset and applies the tokenizer.
+        Returns:
+            A list of tokenized reviews.
+        """
+        logger.info(f"Tokenizing {len(self.dataset)} reviews...")
+
+        self.dataset["TokenizedText"] = self.dataset["Text"].apply(
+            lambda x: self.tokenizer(x, return_tokens=True)
+        )
+        return (
+            self.dataset["TokenizedText"]
+            .apply(lambda tokens: " ".join(tokens))
+            .to_list()
+        )
+    
