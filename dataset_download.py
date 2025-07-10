@@ -3,6 +3,9 @@ from typing import TypedDict
 import requests
 from zipfile import ZipFile
 import sys
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def download_dataset(
@@ -13,7 +16,7 @@ def download_dataset(
     download_url = (
         "https://www.kaggle.com/api/v1/datasets/download/snap/amazon-fine-food-reviews"
     )
-    print(
+    logger.info(
         f"Downloading dataset from {download_url} to {outputdir}/{download_file_name}"
     )
 
@@ -53,17 +56,17 @@ def download_dataset(
 
     print()  # New line after progress bar
 
-    print(f"Download completed. Extracting {download_file_name}...")
+    logger.info(f"Download completed. Extracting {download_file_name}...")
     with ZipFile(os.path.join(outputdir, download_file_name), "r") as zip_ref:
         zip_ref.extractall(outputdir)
 
     os.remove(os.path.join(outputdir, download_file_name))
-    print("Extraction completed. Dataset is ready for use.")
+    logger.info("Extraction completed. Dataset is ready for use.")
     # get list of extracted files
     extracted_files = os.listdir(outputdir)
-    print("Extracted files:")
+    logger.info("Extracted files:")
     for file in extracted_files:
-        print(f"- {file}")
+        logger.info(f"- {file}")
 
     # return full path of extracted files for further processing if needed
     extracted_files = [os.path.join(outputdir, file) for file in extracted_files]
@@ -72,6 +75,5 @@ def download_dataset(
 
 if __name__ == "__main__":
     files = download_dataset()
-    print("--------------------------------")
     for file in files:
-        print(f"Downloaded and extracted: {file}")
+        logger.info(f"Downloaded and extracted: {file}")

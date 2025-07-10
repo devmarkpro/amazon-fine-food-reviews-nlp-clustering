@@ -1,8 +1,6 @@
 from dataset_download import download_dataset
 import os
 import pandas as pd
-
-# logger
 import logging
 
 logger = logging.getLogger(__name__)
