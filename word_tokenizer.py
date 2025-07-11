@@ -3,7 +3,7 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 import re
 from typing import List, Union
-
+import html
 import logging
 
 logger = logging.getLogger(__name__)
@@ -32,11 +32,13 @@ class WordTokenizer:
         remove_stopwords: bool = True,
         lower_case: bool = True,
         use_lemmatization: bool = True,
+        replace_repeated_chars: bool = True,
     ):
         self.remove_stopwords = remove_stopwords
         self.lower_case = lower_case
         self.lematizer = nltk.WordNetLemmatizer() if use_lemmatization else None
         self.stop_words = set(stopwords.words("english")) if remove_stopwords else set()
+        self.replace_repeated_chars = replace_repeated_chars
 
     def process(
         self, text: Union[str, List[str]], return_tokens: bool = False
@@ -54,7 +56,7 @@ class WordTokenizer:
         if not text:
             return [] if return_tokens else ""
         logger.debug(f"Processing text: {text}")
-        
+
         text_str = " ".join(map(str, text)) if isinstance(text, list) else str(text)
 
         text = self._clean_text(text_str)
@@ -78,8 +80,17 @@ class WordTokenizer:
     def _clean_text(self, text: str) -> str:
         if self.lower_case:
             text = text.lower()
+
+        text = html.unescape(text)  # decode &amp; and other HTML entities
         text = text.strip().replace("\n", " ").replace("\r", " ")
-        text = self._remove_punctuation(text)
+        text = re.sub(r"<[^>]*>", "", text)  # Remove HTML tags
+        text = re.sub(r"[^\w\s]", "", text)  # Remove punctuation
+        text = re.sub(r"\s+", " ", text)  # Replace multiple spaces with a single space
+        text = self._fix_contractions(text)  # Fix common contractions
+
+        # reduce repeated characters like "sooo good" to "so good" or "loooove" to "love"
+        if self.replace_repeated_chars:
+            text = re.sub(r"(.)\1{2,}", r"\1\1", text)
 
         return text
 
@@ -96,12 +107,52 @@ class WordTokenizer:
             tokens = self._remove_stop_words(tokens)
         return tokens
 
-    def _remove_punctuation(self, text: str) -> str:
-        # Remove all characters that are not letters, digits, or whitespace
-        return re.sub(r"[^\w\s]", "", text)
-
     def _remove_stop_words(self, tokens: List[str]) -> List[str]:
         return [word for word in tokens if word not in self.stop_words]
+
+    def _fix_contractions(self, text: str) -> str:
+        contraction_map = {
+            "dont": "don't",
+            "cant": "can't",
+            "wont": "won't",
+            "isnt": "isn't",
+            "arent": "aren't",
+            "wasnt": "wasn't",
+            "werent": "weren't",
+            "didnt": "didn't",
+            "doesnt": "doesn't",
+            "havent": "haven't",
+            "hasnt": "hasn't",
+            "hadnt": "hadn't",
+            "shouldnt": "shouldn't",
+            "wouldnt": "wouldn't",
+            "couldnt": "couldn't",
+            "mustnt": "mustn't",
+            "mightnt": "mightn't",
+            "neednt": "needn't",
+            "im": "i'm",
+            "ive": "i've",
+            "ill": "i'll",
+            "id": "i'd",
+            "youre": "you're",
+            "youve": "you've",
+            "youll": "you'll",
+            "youd": "you'd",
+            "theyre": "they're",
+            "theyve": "they've",
+            "theyll": "they'll",
+            "theyd": "they'd",
+            "weve": "we've",
+            "were": "we're",
+            "well": "we'll",
+            "wed": "we'd",
+            "its": "it's",
+            "theres": "there's",
+            "heres": "here's",
+        }
+        for contraction, full_form in contraction_map.items():
+            text = re.sub(r"\b" + re.escape(contraction) + r"\b", full_form, text)
+        return text
 
     def __call__(
         self, text: Union[str, List[str]], return_tokens: bool = False

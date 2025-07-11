@@ -9,25 +9,20 @@ logging.basicConfig(
 
 
 def main():
-    amazon_reviews = FineFoodReview(dataset_path="./data")
-    x = amazon_reviews.tokenize_reviews(down_sample=10)
+
+    tokenizer = WordTokenizer()
+    text = """<head>This is a sample sentence for tokenization. <br/>        !it includes @# special characters.
+
+    it also has some numbers like 123 and punctuation marks like commas, periods, and exclamation points.
+
+    it also has new lines and extra spaces. 😁 >hr> <br>
+
+    some non english sentences like "C'est la vie" or "¡Hola, mundo!" are also included.
+    """
+    tokens = tokenizer(text, return_tokens=False)
     print("-----------------------------------------------------")
-    print("Tokenized Reviews:")
-    print(x)
-
-    # tokenizer = WordTokenizer()
-    # text = """This is a sample sentence for tokenization.         !it includes @# special characters.
-
-    # it also has some numbers like 123 and punctuation marks like commas, periods, and exclamation points.
-
-    # it also has new lines and extra spaces.
-
-    # some non english sentences like "C'est la vie" or "¡Hola, mundo!" are also included.
-    # """
-    # tokens = tokenizer(text, return_tokens=True)
-    # print("-----------------------------------------------------")
-    # print("Tokenized Text:")
-    # print(tokens)
+    print("Tokenized Text:")
+    print(tokens)
 
 
 if __name__ == "__main__":

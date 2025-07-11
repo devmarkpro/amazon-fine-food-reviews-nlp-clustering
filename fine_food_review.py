@@ -6,13 +6,21 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from word_tokenizer import WordTokenizer
 import logging
+from vectorizer import TextVectorizer
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
 
 class FineFoodReview:
-    def __init__(self, dataset_path: str = "./data"):
-        self.dataset = Dataset(dataset_folder_path=dataset_path).load()
+    def __init__(
+        self,
+        dataset_path: str = "./data",
+        dataset_file_name: str = "fine_food_reviews.csv",
+    ):
+        self.dataset = Dataset(
+            dataset_folder_path=dataset_path, dataset_file_name=dataset_file_name
+        ).load()
         self.eda = EDA(self.dataset.copy(deep=True))
 
         self.stats: Dict[str, dict] = {}
@@ -47,7 +55,7 @@ class FineFoodReview:
             "product": self.grouped_by_product.describe().to_dict(),
         }
 
-    def tokenize_reviews(self) -> list[str]:
+    def tokenize_reviews(self, force: bool = False) -> list[str]:
         """
         Tokenizes the reviews in the dataset using the WordTokenizer.
         Adds a new column 'TokenizedText' to the dataset containing the tokenized reviews.
@@ -55,7 +63,12 @@ class FineFoodReview:
         Returns:
             A list of tokenized reviews.
         """
+
         logger.info(f"Tokenizing {len(self.dataset)} reviews...")
+
+        if "TokenizedText" in self.dataset.columns and not force:
+            logger.info("TokenizedText column already exists, skipping tokenization.")
+            return self.dataset["TokenizedText"].to_list()
 
         self.dataset["TokenizedText"] = self.dataset["Text"].apply(
             lambda x: self.tokenizer(x, return_tokens=True)
@@ -65,4 +78,36 @@ class FineFoodReview:
             .apply(lambda tokens: " ".join(tokens))
             .to_list()
         )
-    
+
+    def vectorize_reviews(
+        self, method: Literal["tfidf", "gensim", "sentence_transformers"]
+    ) -> None:
+        """
+        Vectorizes the tokenized reviews using the specified vectorization method.
+        """
+        self.vectorizer = TextVectorizer(method=method)
+
+        # If no TokenizedText yet, tokenize
+        if "TokenizedText" not in self.dataset.columns:
+            logger.info("TokenizedText column not found, tokenizing reviews...")
+            self.tokenize_reviews()
+
+        logger.info(f"Vectorizing reviews using {self.vectorizer.method}...")
+
+        if self.vectorizer.method == "tfidf":
+            # Fit on entire corpus
+            self.vectorizer.fit(self.dataset["TokenizedText"])
+            # Transform each
+            vectors = [
+                self.vectorizer.transform(doc).toarray()[0]
+                for doc in self.dataset["TokenizedText"]
+            ]
+        else:
+            vectors = [
+                self.vectorizer.transform(doc) for doc in self.dataset["TokenizedText"]
+            ]
+
+        self.X_vectorized = np.vstack(vectors)
+        logger.info(f"Vectorization complete. Shape: {self.X_vectorized.shape}")
+        self.dataset[f"ReviewVector_{method}"] = list(self.X_vectorized)
+        return self.X_vectorized
