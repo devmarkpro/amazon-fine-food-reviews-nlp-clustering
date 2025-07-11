@@ -1,57 +1,57 @@
-from sklearn.feature_extraction.text import TfidfVectorizer
 import gensim.downloader as api
-from sentence_transformers import SentenceTransformer
 import numpy as np
 from typing import List, Union
 import gensim
+import logging
+from document_vectorizer_base import DocumentVectorizerBase
+from typing import Literal
+
+logger = logging.getLogger(__name__)
+self.model = api.load(f"glove-wiki-gigaword-100")
+class GloVeVectorizer():
+    def __init__(self):
+        """
+        Initialize the GloVe vectorizer.
+
+        Args:
+            dim (int): Dimension of the GloVe vectors. Default is 100.
+        """
+        super().__init__()
+        self.name = "GloVe Vectorizer"
+        
+
+    def fit(self, documents) -> None:
+        # GloVe is pre-trained, so no fitting is needed
+        pass
+
+    def transform(self, documents: List[str]):
+        
+        
+    
+    def _get_document_vector(tokens, embedding_index, dim=100):
+        vecs = []
+        for token in tokens:
+            if token in embedding_index:
+                vecs.append(embedding_index[token])
+        if len(vecs) > 0:
+            return np.mean(vecs, axis=0)
+        else:
+            return np.zeros(dim)    
 
 
 class TextVectorizer:
-    def __init__(self, method: str = "tfidf"):
+    def __init__(self, method: Literal["tfidf", "glove"]):
         """
         Initialize the TextVectorizer.
 
         Args:
-            method (str): One of 'tfidf', 'gensim', 'sentence_transformers'
+            method (str): One of 'tfidf', 'glove', or 'word2vec'.
+                - 'tfidf': Uses TF-IDF vectorization.
+                - 'glove': Uses GloVe embeddings from Gensim.
         """
-        self.method = method
-        self.gensim_model = None
-        self.sentence_transformers_model = None
-        self.tfidf_vectorizer = None
 
-        if self.method == "gensim":
-            self.gensim_model = api.load("glove-wiki-gigaword-100")
-        elif self.method == "sentence_transformers":
-            self.sentence_transformers_model = SentenceTransformer("all-MiniLM-L6-v2")
+    def transform(self, docs):
+        pass
 
-        elif self.method == "tfidf":
-            self.tfidf_vectorizer = TfidfVectorizer()
-        else:
-            raise ValueError("Choose from 'tfidf', 'gensim', 'sentence_transformers'")
-
-    def transform(self, doc: List[str] | str):
-        """
-        Transform a single document into a vector.
-
-        Args:
-            doc (List[str]): Tokenized document.
-
-        Returns:
-            np.ndarray or sparse matrix: Vector representation of the document.
-        """
-        if isinstance(doc, str):
-            doc = [doc]
-        text_str = " ".join(doc)
-        if self.method == "gensim":
-            vectors = [
-                self.gensim_model[word] for word in doc if word in self.gensim_model  # type: ignore
-            ]
-            if len(vectors) == 0:
-                return np.zeros(self.gensim_model.vector_size)  # type: ignore
-            return np.mean(np.array(vectors), axis=0)
-        elif self.method == "sentence_transformers":
-            return self.sentence_transformers_model.encode(  # type: ignore
-                text_str, show_progress_bar=False
-            )
-        elif self.method == "tfidf":
-            return self.tfidf_vectorizer.transform([text_str])  # type: ignore
+    def get_vectorizer_name(self):
+        pass

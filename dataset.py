@@ -7,7 +7,11 @@ logger = logging.getLogger(__name__)
 
 
 class Dataset:
-    def __init__(self, dataset_folder_path: str = "./data", dataset_file_name: str = "fine_food_reviews.csv"):
+    def __init__(
+        self,
+        dataset_folder_path: str = "./data",
+        dataset_file_name: str = "Reviews.csv",
+    ):
         # there is also a sqlite database file, but we will use the csv file
         self._dataset_file_name = dataset_file_name
 

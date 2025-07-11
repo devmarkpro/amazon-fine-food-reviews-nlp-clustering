@@ -16,7 +16,7 @@ class FineFoodReview:
     def __init__(
         self,
         dataset_path: str = "./data",
-        dataset_file_name: str = "fine_food_reviews.csv",
+        dataset_file_name: str = "Reviews.csv",
     ):
         self.dataset = Dataset(
             dataset_folder_path=dataset_path, dataset_file_name=dataset_file_name
@@ -79,35 +79,72 @@ class FineFoodReview:
             .to_list()
         )
 
+    # def vectorize_reviews(
+    #     self,
+    #     method: Literal["tfidf", "glove"],
+    #     force: bool = False,
+    #     column: str = "ReviewVector",
+    # ) -> np.ndarray:
+    #     """
+    #     Vectorizes the tokenized reviews using the specified vectorization method.
+    #     """
+    #     self.vectorizer = TextVectorizer(method=method)
+    #     if "ReviewVector" in self.dataset.columns and not force:
+    #         logger.info("ReviewVector column already exists, skipping vectorization.")
+    #         self.X_vectorized = np.vstack(self.dataset["ReviewVector"].to_list())
+    #         logger.info(f"Vectorization shape: {self.X_vectorized.shape}")
+    #         return self.X_vectorized
+
+    #     # If no TokenizedText yet, tokenize
+    #     if "TokenizedText" not in self.dataset.columns:
+    #         logger.info("TokenizedText column not found, tokenizing reviews...")
+    #         self.tokenize_reviews()
+
+    #     logger.info(f"Vectorizing reviews using {self.vectorizer.method}...")
+
+    #     vectors = []
+
+    #     if self.vectorizer.method == "tfidf":
+    #         vectors = [
+    #             self.vectorizer.transform(doc).toarray()[0]  # type: ignore
+    #             for doc in self.dataset["TokenizedText"]
+    #         ]
+    #     else:
+    #         vectors = [
+    #             self.vectorizer.transform(doc) for doc in self.dataset["TokenizedText"]
+    #         ]
+
+    #     self.X_vectorized = np.vstack(vectors)  # type: ignore
+    #     logger.info(f"Vectorization complete. Shape: {self.X_vectorized.shape}")
+    #     self.dataset[column] = list(self.X_vectorized)
+    #     logger.info(f"{column} column added to the dataset.")
+    #     return self.X_vectorized
     def vectorize_reviews(
-        self, method: Literal["tfidf", "gensim", "sentence_transformers"]
-    ) -> None:
-        """
-        Vectorizes the tokenized reviews using the specified vectorization method.
-        """
+        self,
+        method: Literal["tfidf", "glove"] = "tfidf",
+        force=False,
+        column="ReviewVector",
+    ):
         self.vectorizer = TextVectorizer(method=method)
 
-        # If no TokenizedText yet, tokenize
+        if column in self.dataset.columns and not force:
+            logger.info(f"{column} column already exists, skipping vectorization.")
+            self.X_vectorized = np.vstack(self.dataset[column].to_list())
+            return self.X_vectorized
+
         if "TokenizedText" not in self.dataset.columns:
-            logger.info("TokenizedText column not found, tokenizing reviews...")
             self.tokenize_reviews()
 
-        logger.info(f"Vectorizing reviews using {self.vectorizer.method}...")
+        logger.info(
+            f"Transforming using {method} and vectorizer: {self.vectorizer.get_vectorizer_name()}..."
+        )
 
-        if self.vectorizer.method == "tfidf":
-            # Fit on entire corpus
-            self.vectorizer.fit(self.dataset["TokenizedText"])
-            # Transform each
-            vectors = [
-                self.vectorizer.transform(doc).toarray()[0]
-                for doc in self.dataset["TokenizedText"]
-            ]
-        else:
-            vectors = [
-                self.vectorizer.transform(doc) for doc in self.dataset["TokenizedText"]
-            ]
+        vectors = self.vectorizer.transform(self.dataset["TokenizedText"].to_list())
+
+        logger.info("Transformation complete.")
 
         self.X_vectorized = np.vstack(vectors)
-        logger.info(f"Vectorization complete. Shape: {self.X_vectorized.shape}")
-        self.dataset[f"ReviewVector_{method}"] = list(self.X_vectorized)
+
+        self.dataset[column] = list(self.X_vectorized)
+        logger.info(f"{column} added. Shape: {self.X_vectorized.shape}")
         return self.X_vectorized
