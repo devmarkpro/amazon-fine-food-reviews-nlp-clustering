@@ -275,6 +275,7 @@ webencodings=0.5.1=pyhd8ed1ab_3
 websocket-client=1.8.0=pyhd8ed1ab_1
 wheel=0.45.1=pyhd8ed1ab_1
 widgetsnbextension=4.0.13=pyhd8ed1ab_1
+wordcloud=1.9.4=pypi_0
 wrapt=1.17.2=pypi_0
 xorg-libxau=1.0.12=h5505292_0
 xorg-libxdmcp=1.1.5=hd74edd7_0
